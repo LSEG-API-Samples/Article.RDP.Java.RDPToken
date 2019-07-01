@@ -7,9 +7,12 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.Vector;
 
+//3rd pary libraries
+//Apache Http Components 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.util.EntityUtils;
+//JSON in java
 import org.json.JSONObject;
 
 public class Utils {
@@ -28,12 +31,13 @@ public class Utils {
 		}
 		
 	}
-	
+	//Write a line in a file
 	static boolean writeAFile(String fileName, String line) {
 		Vector<String> lines = new Vector<String>();
 		lines.add(line);
 		return writeAFile(fileName, lines);
 	}
+	//Write multiples lines in a file
 	static boolean writeAFile(String fileName, Vector<String> lines) {
 		boolean success = false;
 		Writer writer = null;
