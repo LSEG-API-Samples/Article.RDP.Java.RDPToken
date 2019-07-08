@@ -117,7 +117,7 @@ public class EDPToken {
 		if(!Utils.isSuccessRequestPrnError(tokenResponse, "Getting Token Fails:")) {
 			//If requesting with Password Grant Type fails, exit the application
 			if(!useRefreshToken) {
-				System.out.println("The application exits because requesting token with the password failed.");
+				System.out.println("The application will exit because requesting token with the password faield.");
 				System.exit(-1);
 			}
 			//If requesting with Refresh Grant Type fails,
