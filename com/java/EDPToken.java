@@ -73,7 +73,7 @@ public class EDPToken {
 	}
 	
 	//The method to get a valid token used in requesting data from EDP 
-	public static String getToken(HttpClient httpClient, String userName, String clientId)  {
+	public static String getToken(String userName, String clientId,HttpClient httpClient)  {
 		 
 		try {
 			//To create or reuse https connection for REST API used in requesting a new token 
@@ -193,7 +193,8 @@ public class EDPToken {
 			System.out.println("Usage: java com.java.EDPToken <username> <clientId>" );
 			System.exit(-1);
 		} else {
-			String token =  getToken(null, args[0],args[1]);
+			
+			String token =  getToken(args[0],args[1],null);
 			System.out.println("The token is " + token);
 		}
 	}
