@@ -73,18 +73,18 @@ public class EDPToken {
 	}
 	
 	//The method to get a valid token used in requesting data from EDP 
-	public static String getToken(HttpClient hc, String username, String clientId)  {
+	public static String getToken(HttpClient httpClient, String userName, String clientId)  {
 		 
 		try {
 			//To create or reuse https connection for REST API used in requesting a new token 
-			if(hc==null) {
+			if(httpClient==null) {
 				SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
 				_hc = HttpClients.custom().setSSLSocketFactory(sslsf).build();
 			} else {
-				_hc = hc;
+				_hc = httpClient;
 			}
 			//Set username and clientId from the input
-			_username = username;
+			_username = userName;
 			_client_id = clientId;
 			File tokenFile = new File(TOKEN_FILE_NAME);
 			//If the token file(token.txt) does not exists, 
@@ -198,4 +198,3 @@ public class EDPToken {
 		}
 	}
 }
-
