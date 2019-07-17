@@ -21,6 +21,7 @@ public class Utils {
 		if(response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)//fail case
 		{
 			System.out.println(titleError);
+			System.out.println("The error code is " + response.getStatusLine().getStatusCode());
 			String jsonStr = EntityUtils.toString(response.getEntity());
 			JSONObject json = new JSONObject(jsonStr);
 			System.out.println(json.toString(4));
