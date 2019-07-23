@@ -33,6 +33,7 @@ public class EDPToken {
 	private static String _client_id;
 	private static List<NameValuePair> _paramsPasswordGrantType;
 	private static List<NameValuePair> _paramsRefreshTokenGrantType;
+	private static boolean _requestNewAccessToken;
 	
 	//Get the list of parameters for Password Grant Type 
 	private static  List<NameValuePair> getParamPasswordGrantType() {
@@ -72,23 +73,25 @@ public class EDPToken {
 		return _paramsRefreshTokenGrantType;
 	}
 	
-	//The method to get a valid token used in requesting data from EDP 
-	public static String getToken(String userName, String clientId,HttpClient httpClient)  {
+	//The method to get a valid access token from the token service
+	//requestNewAccessToken is true when access token is used for ERT in cloud(streaming data)
+	//requestNewAccessToken is false when access token is used for EDP(snapshot data)
+	public static String getToken(String userName, String clientId,boolean requestNewAccessToken)  {
 		 
 		try {
 			//To create or reuse https connection for REST API used in requesting a new token 
-			if(httpClient==null) {
-				SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
-				_hc = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-			} else {
-				_hc = httpClient;
+			if(_hc==null) {
+					SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(new SSLContextBuilder().build());
+					_hc = HttpClients.custom().setSSLSocketFactory(sslsf).build();
 			}
+			
 			//Set username and clientId from the input
 			_username = userName;
 			_client_id = clientId;
+			_requestNewAccessToken = requestNewAccessToken;
 			File tokenFile = new File(TOKEN_FILE_NAME);
 			//If the token file(token.txt) does not exists, 
-			//request a new token using Password Grant Type
+			//request a new access token with Password Grant Type
 			if(!tokenFile.exists()) {
 				return requestToken(getParamPasswordGrantType(), false);
 			}
@@ -102,28 +105,28 @@ public class EDPToken {
 		}
 		return _access_token;
 	}
-	//The method to get a new token via REST API 
+	//The method to request a new access token via REST API from the Token Service
 	private static String requestToken(List<NameValuePair> params, boolean useRefreshToken) throws Exception {
-		//Specify the end point for token request
+		//Specify the end point for access token request
 		String EDP_VERSION_AUTH = "beta1";
 		String url = "https://api.refinitiv.com/auth/oauth2/" +EDP_VERSION_AUTH+ "/token";
-		//Set the parameters to request a new token 
+		//Set the parameters to request a new access token 
 		HttpPost http4Token = new HttpPost(url);
 		http4Token.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
-		//Make a REST call to get a new token
+		//Make a REST call to get a new access token
 		HttpResponse tokenResponse = _hc.execute(http4Token);
-		//Check if getting a new token is successful(HTTP status code is 200) or not. 
+		//Check if getting a new access token is successful(HTTP status code is 200) or not. 
 		//if fails, print the error
-		if(!Utils.isSuccessRequestPrnError(tokenResponse, "Getting Token Fails:")) {
+		if(!Utils.isSuccessRequestPrnError(tokenResponse, "Getting Access Token Fails:")) {
 			//If requesting with Password Grant Type fails, exit the application
 			if(!useRefreshToken) {
-				System.out.println("The application will exit because requesting token with the password failed.");
+				System.out.println("The application will exit because requesting access token with the password failed.");
 				System.exit(-1);
 			}
 			//If requesting with Refresh Grant Type fails,
-			//request a new token again with Password Grant Type
+			//request a new access token again with Password Grant Type
 			else {
-				System.out.println("Request token using refresh_token failed. Try again using password");
+				System.out.println("Request a new access token with refresh token failed. Try again with password");
 				return requestToken(getParamPasswordGrantType(), false);
 			}
 		} 
@@ -138,7 +141,7 @@ public class EDPToken {
 		tokenJson.put("expiry_tm", expiry_tm);
 		_access_token = tokenJson.getString("access_token");
 		_refresh_token = tokenJson.getString("refresh_token");
-		System.out.println("Getting token is successful. Writing token info to a file named " + TOKEN_FILE_NAME);
+		System.out.println("Getting access token is successful. Writing token info to a file named " + TOKEN_FILE_NAME);
 		//Write the Json Object into a token file
 		boolean success = Utils.writeAFile(TOKEN_FILE_NAME,tokenJson.toString(4));
 		//If writing the token file fails, exit. Otherwise, return the new valid token
@@ -148,8 +151,8 @@ public class EDPToken {
 		return _access_token;
 	}
 	
-	//Get the token(access_token) in the file. 
-	//If the token is unusable, calls requestToken(..) method to request a new token.
+	//Get the access token in the file if _requestNewAccessToken is true 
+	//If the access token is unusable or _requestNewAccessToken is false, calls requestToken(..) method to request a new access token.
 	private static String readTokenFile() {
 		//Read the token information in the token file as a String
 		try {            
@@ -164,20 +167,26 @@ public class EDPToken {
             JSONObject tokenJson = new JSONObject(sb.toString());
 			//Get Refresh Token in the JSONObject
             _refresh_token = tokenJson.getString("refresh_token");
-			//Check if the access_token has been expired or not
-	        //If not, get access_token from the JSONObject
-            if(tokenJson.getLong("expiry_tm") > System.currentTimeMillis()) {
-    			System.out.println("The token has not expired, use the token in the file.");
-    			 _access_token = tokenJson.getString("access_token");
-    		//If yes, request a new access_token using Refresh Token
-    		} else {
-    			System.out.println("Token is expired, request a new token using refresh_token ...");
+            //If new access token is required, request it with refresh token 
+            if(_requestNewAccessToken) {
+            	System.out.println("Request a new access token with refresh token ...");
     			_access_token = requestToken(getParamRefreshTokenGrantType(), true);
-    		}
+            } else {
+            	//Check if the access token has been expired or not
+            	//If not, get access token from the JSONObject
+            	if(tokenJson.getLong("expiry_tm") > System.currentTimeMillis()) {
+            		System.out.println("The access token has not been expired, use the access token in the file.");
+            		_access_token = tokenJson.getString("access_token");
+            		//If yes, request a new access_token with Refresh Token
+            	} else {
+            		System.out.println("The access token has been expired, request a new access token with refresh token ...");
+            		_access_token = requestToken(getParamRefreshTokenGrantType(), true);
+            	}
+            }
         }
         catch(Exception e) {
-			//If fails, request a new token again using Password
-        	System.out.println("Reading Token file failed, request new token using password ...");
+			//If fails, request a new access token again with password
+        	System.out.println("Reading Token file failed, request a new access token with password ...");
         	try {
         		_access_token = requestToken( getParamPasswordGrantType(), false);
         	}
@@ -189,13 +198,13 @@ public class EDPToken {
 		return _access_token;
     }
 	public static void main(String[] args) {
-		if(args.length!=2) {
-			System.out.println("Usage: java com.java.EDPToken <username> <clientId>" );
+		if(args.length!=3) {
+			System.out.println("Usage: java com.java.EDPToken <username> <clientId> <requestNewAccessToken>" );
 			System.exit(-1);
 		} else {
 			
-			String token =  getToken(args[0],args[1],null);
-			System.out.println("The token is " + token);
+			String accessToken =  getToken(args[0],args[1],Boolean.valueOf(args[2]));
+			System.out.println("The access token is " +  accessToken);
 		}
 	}
 }
