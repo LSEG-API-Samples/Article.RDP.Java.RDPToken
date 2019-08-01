@@ -33,7 +33,7 @@ public class EDPToken {
 	private static String _client_id;
 	private static List<NameValuePair> _paramsPasswordGrantType;
 	private static List<NameValuePair> _paramsRefreshTokenGrantType;
-	private static boolean _requestNewAccessToken;
+	private static boolean _alwaysRequest;
 	
 	//Get the list of parameters for Password Grant Type 
 	private static  List<NameValuePair> getParamPasswordGrantType() {
@@ -74,9 +74,9 @@ public class EDPToken {
 	}
 	
 	//The method to get a valid access token from the token service
-	//requestNewAccessToken is true when access token is used for ERT in cloud(streaming data)
-	//requestNewAccessToken is false when access token is used for EDP(snapshot data)
-	public static String getToken(String userName, String clientId,boolean requestNewAccessToken)  {
+	//alwayRequest is true when access token is used for ERT in cloud(always request new access token)
+	//alwayRequest is false when access token is used for EDP(return non-expired access token;otherwise request a new one)
+	public static String getToken(String userName, String clientId,boolean alwaysRequest)  {
 		 
 		try {
 			//To create or reuse https connection for REST API used in requesting a new token 
@@ -88,7 +88,7 @@ public class EDPToken {
 			//Set username and clientId from the input
 			_username = userName;
 			_client_id = clientId;
-			_requestNewAccessToken = requestNewAccessToken;
+			_alwaysRequest = alwaysRequest;
 			File tokenFile = new File(TOKEN_FILE_NAME);
 			//If the token file(token.txt) does not exists, 
 			//request a new access token with Password Grant Type
@@ -168,7 +168,7 @@ public class EDPToken {
 			//Get Refresh Token in the JSONObject
             _refresh_token = tokenJson.getString("refresh_token");
             //If new access token is required, request it with refresh token 
-            if(_requestNewAccessToken) {
+            if(_alwaysRequest) {
             	System.out.println("Request a new access token with refresh token ...");
     			_access_token = requestToken(getParamRefreshTokenGrantType(), true);
             } else {
@@ -199,7 +199,7 @@ public class EDPToken {
     }
 	public static void main(String[] args) {
 		if(args.length!=3) {
-			System.out.println("Usage: java com.java.EDPToken <username> <clientId> <requestNewAccessToken>" );
+			System.out.println("Usage: java com.java.EDPToken <username> <clientId> <alwaysRequest>" );
 			System.exit(-1);
 		} else {
 			
