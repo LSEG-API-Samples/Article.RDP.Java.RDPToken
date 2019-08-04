@@ -1,2 +1,2 @@
 # Article.EDP.Java.EDPToken
-Created by Platform Services GitHub tool on Thu Jun 20 2019
+Please refer to https://developers.refinitiv.com/article/easy-obtaining-token-edp-gateway-java
