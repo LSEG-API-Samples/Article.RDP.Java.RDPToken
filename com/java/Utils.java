@@ -4,8 +4,9 @@ import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 //3rd pary libraries
 //Apache Http Components 
@@ -34,12 +35,12 @@ public class Utils {
 	}
 	//Write a line in a file
 	static boolean writeAFile(String fileName, String line) {
-		Vector<String> lines = new Vector<String>();
+		List<String> lines = new ArrayList<String>();
 		lines.add(line);
 		return writeAFile(fileName, lines);
 	}
 	//Write multiples lines in a file
-	static boolean writeAFile(String fileName, Vector<String> lines) {
+	static boolean writeAFile(String fileName, List<String> lines) {
 		boolean success = false;
 		Writer writer = null;
 
